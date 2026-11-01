@@ -1,0 +1,6 @@
+{
+  "name": "Apex College Clubs Hub",
+  "description": "Centralized platform for college clubs: event scheduling, interactive gallery, real-time club chat, and role-based HOD/President administration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>College Clubs Hub | Code Crackers · Innovation · Devspire · Sports · Sankalpa · Cultural</title>
+    <meta name="description" content="Centralized collegiate platform for campus clubs: Code Crackers, Innovation, Devspire, Sports, Social responsibility sankalpa, and Cultural. Real-time chat, events, gallery, and role-based administration." />
+    <meta property="og:title" content="College Clubs Hub" />
+    <meta property="og:description" content="Centralized collegiate platform for all 6 campus clubs: Code Crackers, Innovation, Devspire, Sports, Social responsibility sankalpa, and Cultural." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Syne:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+      // Safe guard against libraries or runtime scripts assigning window.fetch when it has only a getter
+      (function() {
+        try {
+          var realFetch = window.fetch ? window.fetch.bind(window) : null;
+          var activeFetch = realFetch;
+          
+          // Define a writable property on window so `window.fetch = ...` succeeds without throwing
+          try {
+            Object.defineProperty(window, 'fetch', {
+              get: function() {
+                return activeFetch || (realFetch ? realFetch : window.fetch);
+              },
+              set: function(newFetchFn) {
+                activeFetch = newFetchFn;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e1) {
+            // If already non-configurable on window, set on Window prototype
+            try {
+              if (window.Window && window.Window.prototype) {
+                Object.defineProperty(window.Window.prototype, 'fetch', {
+                  get: function() {
+                    return activeFetch || (realFetch ? realFetch : null);
+                  },
+                  set: function(newFetchFn) {
+                    activeFetch = newFetchFn;
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            } catch (e2) {}
+          }
+        } catch (err) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-black text-white antialiased font-sans min-h-screen selection:bg-white selection:text-black">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

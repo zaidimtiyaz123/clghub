@@ -1,0 +1,273 @@
+// Prisma Schema for College Clubs Hub
+// Database: PostgreSQL / Relational DB
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SystemRole {
+  HOD
+  PRESIDENT
+  VICE_PRESIDENT
+  MEMBER
+}
+
+enum ClubRole {
+  PRESIDENT
+  VICE_PRESIDENT
+  MEMBER
+}
+
+enum MembershipStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MUTED
+}
+
+enum ApprovalStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum EventCategory {
+  WORKSHOP
+  HACKATHON
+  COMPETITION
+  SEMINAR
+  CULTURAL
+  GAMING
+  MEETUP
+}
+
+enum RSVPStatus {
+  GOING
+  INTERESTED
+  CANCELLED
+}
+
+enum AnnouncementPriority {
+  NORMAL
+  URGENT
+  PINNED
+}
+
+enum NotificationType {
+  EVENT
+  ANNOUNCEMENT
+  MEMBERSHIP_APPROVAL
+  CHAT
+  SYSTEM
+}
+
+model User {
+  id              String        @id @default(uuid())
+  email           String        @unique
+  passwordHash    String
+  fullName        String
+  rollNumber      String?       @unique
+  department      String
+  year            Int           @default(1)
+  avatarUrl       String?
+  bio             String?
+  systemRole      SystemRole    @default(MEMBER)
+  isEmailVerified Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relationships
+  presidingClubs      Club[]               @relation("ClubPresident")
+  clubMemberships     ClubMember[]
+  approvedMemberships ClubMember[]         @relation("ApprovedMemberships")
+  createdEvents       Event[]              @relation("EventCreator")
+  eventRegistrations  EventRegistration[]
+  galleryUploads      GalleryImage[]
+  chatMessages        Message[]
+  announcements       Announcement[]
+  notifications       Notification[]
+
+  @@map("users")
+}
+
+model Club {
+  id              String        @id @default(uuid())
+  name            String        @unique
+  slug            String        @unique
+  tag             String
+  description     String
+  fullAbout       String        @db.Text
+  category        String
+  logoUrl         String
+  bannerUrl       String
+  accentColor     String        @default("#3b82f6")
+  establishedYear Int           @default(2022)
+  meetingSchedule String?
+  roomLocation    String?
+  contactEmail    String
+  discordOrLink   String?
+  status          String        @default("ACTIVE")
+  
+  // Leadership
+  presidentId     String?
+  president       User?         @relation("ClubPresident", fields: [presidentId], references: [id])
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relationships
+  members         ClubMember[]
+  events          Event[]
+  galleryImages   GalleryImage[]
+  chatRooms       ChatRoom[]
+  announcements   Announcement[]
+
+  @@map("clubs")
+}
+
+model ClubMember {
+  id           String           @id @default(uuid())
+  userId       String
+  clubId       String
+  clubRole     ClubRole         @default(MEMBER)
+  status       MembershipStatus @default(PENDING)
+  joinedAt     DateTime         @default(now())
+  approvedAt   DateTime?
+  approvedById String?
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club         Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  approvedBy   User?            @relation("ApprovedMemberships", fields: [approvedById], references: [id])
+
+  @@unique([userId, clubId])
+  @@map("club_members")
+}
+
+model Event {
+  id             String         @id @default(uuid())
+  clubId         String
+  title          String
+  slug           String
+  description    String
+  fullDetails    String         @db.Text
+  venue          String
+  eventDate      DateTime
+  startTime      String
+  endTime        String
+  category       EventCategory  @default(WORKSHOP)
+  posterUrl      String
+  maxAttendees   Int            @default(100)
+  isCollegeWide  Boolean        @default(false)
+  approvalStatus ApprovalStatus @default(APPROVED)
+  createdById    String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  club           Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy      User           @relation("EventCreator", fields: [createdById], references: [id])
+  registrations  EventRegistration[]
+  galleryImages  GalleryImage[]
+
+  @@map("events")
+}
+
+model EventRegistration {
+  id           String     @id @default(uuid())
+  eventId      String
+  userId       String
+  rsvpStatus   RSVPStatus @default(GOING)
+  registeredAt DateTime   @default(now())
+  notes        String?
+
+  event        Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("event_registrations")
+}
+
+model GalleryImage {
+  id             String         @id @default(uuid())
+  clubId         String
+  eventId        String?
+  title          String
+  caption        String?
+  imageUrl       String
+  albumName      String         @default("Highlights")
+  approvalStatus ApprovalStatus @default(APPROVED)
+  uploadedById   String
+  createdAt      DateTime       @default(now())
+
+  club           Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  event          Event?         @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  uploadedBy     User           @relation(fields: [uploadedById], references: [id])
+
+  @@map("gallery_images")
+}
+
+model ChatRoom {
+  id          String    @id @default(uuid())
+  clubId      String
+  name        String
+  topic       String?
+  isArchived  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  club        Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  messages    Message[]
+
+  @@map("chat_rooms")
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  chatRoomId  String
+  senderId    String
+  content     String    @db.Text
+  imageUrl    String?
+  isPinned    Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+  deletedById String?
+  createdAt   DateTime  @default(now())
+
+  chatRoom    ChatRoom  @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  sender      User      @relation(fields: [senderId], references: [id])
+
+  @@map("messages")
+}
+
+model Announcement {
+  id            String               @id @default(uuid())
+  clubId        String?              // null = College-wide announcement
+  title         String
+  content       String               @db.Text
+  isCollegeWide Boolean              @default(false)
+  priority      AnnouncementPriority @default(NORMAL)
+  createdById   String
+  createdAt     DateTime             @default(now())
+
+  club          Club?                @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy     User                 @relation(fields: [createdById], references: [id])
+
+  @@map("announcements")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType @default(SYSTEM)
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
